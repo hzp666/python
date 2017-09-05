@@ -6,4 +6,22 @@ while True:
     print(line)
     line = temp.readline()
 temp.close()    
+
+================================
+data = 'zhe xie dou shi ling wai jia de '
+temp = open('E:/临时/pythonTest/book.txt ','w',encoding='utf-8',errors = 'ignore')
+temp.write(data)
+temp.close()
+
+data = '/r'+'这些都是新加的 '
+temp = open('E:/临时/pythonTest/book.txt ','a',encoding='utf-8',errors = 'ignore')
+temp.write(data)
+temp.close()
+
+
+
+temp2 = open('E:/临时/pythonTest/book.txt ','r',encoding='utf-8',errors = 'ignore')
+contxt = temp2.read()
+print(contxt)
+temp2.close()
     
