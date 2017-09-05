@@ -1,0 +1,6 @@
+a = 12;
+try:
+    print(a)
+    print(b)
+except Exception as errTest:
+    print('有几把错了')
