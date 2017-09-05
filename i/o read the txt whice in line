@@ -1,0 +1,8 @@
+temp = open('E:/临时/pythonTest/book.txt ','r',encoding='utf-8',errors = 'ignore')
+line = temp.readline()
+while True:
+    if(len(line) == 0):
+        break
+    print(line)
+    line = temp.readline()
+    
