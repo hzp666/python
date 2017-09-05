@@ -5,4 +5,5 @@ while True:
         break
     print(line)
     line = temp.readline()
+temp.close()    
     
