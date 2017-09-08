@@ -1,0 +1,13 @@
+import requests
+from bs4 import BeautifulSoup
+
+
+def trade_spider(searchName):
+    itemName = searchName
+    url = "http://www.guo68.com/sell/search.php?kw="+str(itemName)
+    source_code = requests.get(url)
+    plain_text = source_code.text
+    soup = BeautifulSoup(plain_text,'html.parser')
+    for link in soup.findAll('a',{'class':'px14'}):
+        title = link.string
+        print(title)
