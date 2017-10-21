@@ -1,0 +1,22 @@
+def healhNum (age, appleNum, cigsNum):
+    score = 100- age + appleNum*3 + cigsNum *2
+    print(score)
+
+def test ( *args):
+    score = 0
+    for a in args:
+        score += a
+    print(score)
+
+
+zhangSan = [22, 3, 10]
+healhNum(*zhangSan)
+
+
+test(1, 2, 3, 4, 5)
+
+
+输出结果：
+107
+
+15
