@@ -1,0 +1,16 @@
+import random
+import urllib.request
+
+
+def domnLoad_image(url):
+    # for the name of your download image
+    num = random.randrange(1, 10)
+    fullName = str(num) + '.jpg'
+
+    # to download image
+    urllib.request.urlretrieve(url, filename=fullName)
+
+
+domnLoad_image('https://ws3.sinaimg.cn/large/9150e4e5ly1fkr9sie74yj20k00k0n1m.jpg')
+
+
