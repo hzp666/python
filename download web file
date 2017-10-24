@@ -1,0 +1,23 @@
+from urllib import request
+
+goog_url = 'https://gitee.com/hzp666/PythonTest/blob/master/i/o%20read%20the%20txt%20whice%20in%20line#'
+
+
+def download_goog(url):
+    respose = request.urlopen(goog_url)
+    down_load_file = respose.read()
+    str_file = str(down_load_file)
+    file_lines = str_file.split('\n')
+
+    save_file_path = 'E:/临时/pythonTest/book.txt'
+    for a in file_lines:
+        temp = open(save_file_path, 'w')
+        temp.write(a + '\n')
+        temp.close()
+
+
+download_goog(goog_url)
+
+
+
+
