@@ -1,0 +1,79 @@
+import requests
+from bs4 import BeautifulSoup
+
+
+def trade_spider(searchName):
+    itemName = searchName
+    url = "http://www.guo68.com/sell/search.php?kw="+str(itemName)
+    source_code = requests.get(url)
+    plain_text = source_code.text
+    soup = BeautifulSoup(plain_text, 'html.parser')
+
+    # get the web's html
+    '''
+     import requests
+     from bs4 import BeautifulSoup
+     source_html = requests.get('www.baidu.com')
+     html = source_html.text
+     soup = BeautifulSoup(html,'html.parser')
+    '''
+
+    # get the local html text
+    '''
+     from bs4 import BeautifulSoup
+     soup = BeautifulSoup(open('index.html'))
+    '''
+
+    # format the html
+    # print(soup.prettify())
+
+    # get the element's type
+    # print(type(soup.div))  ==> <class 'bs4.element.Tag'>
+
+    # get the tag's name
+    # print(soup.a.name)  PS:those method are to operate the first matched element
+
+    # get the tag's attribute PS:return a dictionary
+    # print(soup.div.attrs)
+
+    # get the tag's special attribute
+    # print(soup.div.get('class'))
+
+    # alter the tag's special attribute
+    # soup.div['class'] = 'newClass'
+
+    # delete the tag's special attribute
+    # del soup.div['class']
+
+    # NavigableString :get the tag's content
+    # print(soup.div.string)
+
+    # comment: is a special NavigableSting, which can't output the tag's commenting part
+    '''
+    <a class='test'><!-- commenting part --> content </a>
+    print(soup.a.string)  ==> content
+    print(type(soup.a.string))  ==> <class 'bs4.element.Comment'>
+    # to judge the element is comment or false
+    if type(soup.a.string) == bs4.element.Comment:
+        print(soup.a.string)
+    '''
+    # .contents method to get the tag's blow element,return a list
+    # print(soup.head.contents) ==> to list all elements blow the head
+
+    # to get the special elements blow
+    # print(soup.head.contents[1])
+
+    # .children  : also to return the elements blow ,but no list
+    '''
+        for elements in soup.head.children:
+            print(elements)
+    '''
+
+    # .descendants: get the all elements blow, from outer to inner;eg； html's then head's ...
+    # print(soup.descendants)
+    
+    # find all elements
+    # print(soup.findAll('div'))
+
+
+trade_spider('苹果')
