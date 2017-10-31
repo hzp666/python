@@ -48,6 +48,22 @@ def trade_spider(searchName):
     # NavigableString :get the tag's content
     # print(soup.div.string)
 
+    # .string: if the tag don't have blow tags then return the tag's content,
+    # -or only have one blow tag then return the blow's content
+    # print(soup.head.string)  ==> output the body's content,if only have the body tag
+
+    # 。strings: find all special tag's content
+    '''
+        for i in soup.div.strings:
+            print(i)
+    '''
+
+    # .stripped_strings: find all special tag's content and delete unnecessary space
+    '''
+        for i in soup.div.stripped_strings:
+            print(i)
+    '''
+
     # comment: is a special NavigableSting, which can't output the tag's commenting part
     '''
     <a class='test'><!-- commenting part --> content </a>
@@ -57,6 +73,7 @@ def trade_spider(searchName):
     if type(soup.a.string) == bs4.element.Comment:
         print(soup.a.string)
     '''
+
     # .contents method to get the tag's blow element,return a list
     # print(soup.head.contents) ==> to list all elements blow the head
 
@@ -71,9 +88,66 @@ def trade_spider(searchName):
 
     # .descendants: get the all elements blow, from outer to inner;eg； html's then head's ...
     # print(soup.descendants)
-    
+
     # find all elements
     # print(soup.findAll('div'))
+
+    # .parent: find the special tag's father tag
+    ''''
+        # find the special tag's father tag and output all it blow tag
+        print(soup.div.parent)
+        
+        # find the special tag's father's tag name               
+        print(soup.a.parent.name)
+        
+        # find the special tag's father's tag attribute
+        print(soup.a.parent.attr)
+        
+        # find an output the special tag's father tag's all contents
+        for i in soup.a.parent.strings:
+            print(i)
+    '''
+
+    # .parents: find all special tag's father
+    '''
+        for i in soup.a.parents:
+            print(i.name)     ==> div div div body html
+    '''
+
+    # .next_sibling: get the special tag's behead brother tag. PS:the space is also a brother tag
+    '''
+        print(type(soup.a.next_sibling))
+        print(soup.div.next_sibling) ==> space look like null
+        print(soup.div.next_sibling.next_sibling) ==> this is true brother tag
+    '''
+
+    # .previous_sibling : get the special tag's ahead brother tag. PS:the space is also a brother tag
+    '''
+    print(type(soup.a.previous_sibling))
+    print(soup.a.previous_sibling)   ==> space look like null
+    print(soup.a.previous_sibling.previous_sibling)   ==> this is true brother tag
+    '''
+
+    # .next_siblings  and  .previous_siblings  :  to find all  behead or ahead brother tags
+    '''
+    for i in soup.a.next_sibling.next_siblings:
+        print(i)
+    '''
+
+    # .next_element or .previous_element: to find the  special tag's closer tag ahead or behead
+    '''
+    print(soup.div.next_element.next_element)
+    print(soup.a.previous_element.previous_element)
+    '''
+
+    # .next_elements and .previous_element ：find the special tag's all closer tag ahead or behead
+    '''
+    for i in soup.a.next_element.next_elements:
+            print(i)
+    
+    for i in soup.a.previous_element.previous_elements:
+            print(i)        
+    '''
 
 
 trade_spider('苹果')
