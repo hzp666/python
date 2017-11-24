@@ -18,7 +18,7 @@ temp = open('E:/临时/pythonTest/book.txt ','a',encoding='utf-8',errors = 'igno
 temp.write(data)
 temp.close()
 
-
+ 
 
 temp2 = open('E:/临时/pythonTest/book.txt ','r',encoding='utf-8',errors = 'ignore')
 contxt = temp2.read()
