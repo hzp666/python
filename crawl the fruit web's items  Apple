@@ -1,0 +1,32 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+
+
+def trade_spider(searchName):
+    itemName = searchName
+    url = "http://www.guo68.com/sell/search.php?kw="+str(itemName)
+    source_code = requests.get(url)
+    plain_text = source_code.text
+    soup = BeautifulSoup(plain_text, 'html.parser')
+    # open the flat file
+    temp = open('E:/临时/pythonTest/book.txt ', 'a', encoding='utf-8', errors='ignore')
+    # for new line and ---------  nice view
+    flag = 1
+    # loop the content to flat file
+    for content in soup.select('strong.px14'):
+        for detail_content in content.stripped_strings:
+            temp.write(detail_content)
+        # judge is the item's name? then have a ------ for nice view
+        if flag % 2 == 1:
+            temp.write('-------------  ')
+
+        # judge is the item's price? then have a ------ for nice view
+        if flag % 2 == 0:
+            temp.write('\n')
+        flag += 1
+
+    temp.close()
+
+
+trade_spider('苹果')
