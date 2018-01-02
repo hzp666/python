@@ -1,0 +1,38 @@
+import threading
+import time
+
+exit_flage = 0
+
+
+def print_time(thread_name, counter, delay):
+
+    while counter:
+        if exit_flage:
+            thread_name.exit()
+        time.sleep(delay)
+        print(' %s is %s' % (thread_name, time.ctime(time.time())))
+        counter -= 1
+
+
+class My_thread(threading.Thread):
+    def __init__(self, threadId, name, counter):
+        threading.Thread.__init__(self)
+        self.threadID = threadId
+        self.name = name
+        self.count = counter
+
+    def run(self):
+        print('开始线程：%s' % (self.name))
+        print_time(self.name, self.count, 5)
+        print('退出线程:', self.name)
+
+
+thread1 = My_thread(1, 'thread1', 5)
+thread2 = My_thread(2, 'thread2', 5)
+
+thread1.start()
+thread2.start()
+thread1.join()
+thread2.join()
+
+
