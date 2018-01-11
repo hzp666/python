@@ -1,0 +1,66 @@
+import requests
+from bs4 import BeautifulSoup
+import jieba
+from collections import Counter
+
+
+def crawel(url):
+
+    # split_title to save the title's cut words
+    split_title = []
+
+    # get the HTML'S content
+    source_code = requests.get(url).text
+    soup = BeautifulSoup(source_code, 'html.parser')
+    for tag in soup.select('.title'):
+        title = tag.string
+
+        # split the HTML's content
+        split_title.append(jieba.lcut(title))
+    return split_title
+
+
+def clean_word(each_words):
+    # final list , to transfer two dimension to one dimension
+    final_list = []
+
+    # list for save the useless Symbol
+    string_dic = ['+', '-', '*', '/', '!', '@', '@', '#', '$', '%', '^', ':',
+                  '&', '*', '(', ')', '-', '_', '+', '=', '[', ']', '{', '}',
+                  '?', ',', '.', '/', '', '-', '——', '。', '；', '：', ' ', '—',
+                  '（', '）', '|', ' ', '，', '! ', '！']
+    # transfer the useless symbol to ' '
+    for i in range(0, len(each_words)):
+        for m in range(0, len(each_words[i])):
+            if each_words[i][m] in string_dic:
+                each_words[i][m] = ' '
+
+    # delete the list's ' ' which replace step remained
+    for i in range(0, len(each_words)):
+        # try for the list's function Index(),if it don't find the elements then Except
+        try:
+            for x in range(0, len(each_words[i])):
+                del each_words[i][each_words[i].index(' ')]
+
+        except ValueError:
+            continue
+
+    # final list , transfer two dimension to one dimension
+    for i in range(0, len(each_words)):
+        for x in range(0, len(each_words[i])):
+            final_list.append(each_words[i][x])
+
+    return final_list
+
+
+url = 'http://geek.csdn.net/'
+
+func1 = crawel(url)
+print(func1)
+
+func2 = clean_word(func1)
+print(func2)
+
+# counter the list's words frequency
+c = Counter(func2).most_common(20)
+print(c)
