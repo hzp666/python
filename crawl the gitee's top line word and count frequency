@@ -2,8 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import jieba
 from collections import Counter
+import jieba.posseg
 
 
+# the method about download the source code or content
+# return list
 def crawel(url):
 
     # split_title to save the title's cut words
@@ -20,6 +23,8 @@ def crawel(url):
     return split_title
 
 
+# the method for clean the source or content,especially the punctuation
+# return list
 def clean_word(each_words):
     # final list , to transfer two dimension to one dimension
     final_list = []
@@ -28,7 +33,8 @@ def clean_word(each_words):
     string_dic = ['+', '-', '*', '/', '!', '@', '@', '#', '$', '%', '^', ':',
                   '&', '*', '(', ')', '-', '_', '+', '=', '[', ']', '{', '}',
                   '?', ',', '.', '/', '', '-', '——', '。', '；', '：', ' ', '—',
-                  '（', '）', '|', ' ', '，', '! ', '！']
+                  '（', '）', '|', ' ', '，', '! ', '！', '-', '：', '，', '“', '”',
+                  ' ', '-']
     # transfer the useless symbol to ' '
     for i in range(0, len(each_words)):
         for m in range(0, len(each_words[i])):
@@ -53,14 +59,64 @@ def clean_word(each_words):
     return final_list
 
 
+# method about return the words and the part of speech
+# return list
+def part_of_speech(url):
+    # split_title to save the title's cut words
+    split_title = []
+
+    # final_list for return
+    final_list = []
+
+    # get the HTML'S content
+    source_code = requests.get(url).text
+    soup = BeautifulSoup(source_code, 'html.parser')
+    for tag in soup.select('.title'):
+        title = tag.string
+
+        # split the HTML's content
+        split_title.append(jieba.posseg.lcut(title))
+
+# clean
+    # list for save the useless Symbol
+    string_dic = ['+', '-', '*', '/', '!', '@', '@', '#', '$', '%', '^', ':',
+                  '&', '*', '(', ')', '-', '_', '+', '=', '[', ']', '{', '}',
+                  '?', ',', '.', '/', '', '-', '——', '。', '；', '：', ' ', '—',
+                  '（', '）', '|', ' ', '，', '! ', '！', '-', '：', '，', '“', '”',
+                  ' ', '-', '？', '】', '【']
+    # final list , transfer two dimension to one dimension
+    for i in range(0, len(split_title)):
+        for x in range(0, len(split_title[i])):
+            final_list.append(split_title[i][x])
+
+    # transfer the useless symbol to ' '
+    for x in range(0, len(final_list)):
+        if final_list[x].word in string_dic:
+            final_list[x] = ' '
+
+    # delete the list's ' ' which replace step remained
+
+    for x in range(0, len(final_list)):
+        try:
+            del final_list[final_list.index(' ')]
+        except ValueError:
+            continue
+
+    return final_list
+
+
 url = 'http://geek.csdn.net/'
 
-func1 = crawel(url)
-print(func1)
+# func1 = crawel(url)
+# print(func1)
 
-func2 = clean_word(func1)
-print(func2)
+# func2 = clean_word(func1)
+# print(func2)
 
-# counter the list's words frequency
-c = Counter(func2).most_common(20)
-print(c)
+
+# # counter the list's words frequency
+# c = Counter(func2).most_common(20)
+# print(c)
+
+func3 = part_of_speech(url)
+print(func3)
