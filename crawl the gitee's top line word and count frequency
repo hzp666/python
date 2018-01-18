@@ -105,6 +105,21 @@ def part_of_speech(url):
     return final_list
 
 
+
+# use self dictionary 
+txt = u'欧阳建国是创新办主任也是欢聚时代公司云计算方面的专家'
+jieba.load_userdict('book.txt')
+# book.txt's content below
+# 'word' 'frequency' 'part of the speech'
+# 欧阳建国 5 n
+# 拆迁办 5 n
+# 云计算 5 n
+# 欢聚时代 5 n
+# 创新办 5 n
+
+print(jieba.lcut(txt))
+
+
 url = 'http://geek.csdn.net/'
 
 # func1 = crawel(url)
