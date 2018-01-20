@@ -1,0 +1,29 @@
+scores_one = [50, 60, 70, 80, 90, 100, 50, 55, 60, 62, 64, 68, 94, 82]
+scores_two = [80, 85, 71, 65, 45, 32, 100, 88, 95, 62, 74]
+scores = zip(scores_one, scores_two)
+for a, b in scores:
+    print(a, b)
+    
+    if a == b:
+        print(a)
+
+# 输出：
+50 80
+60 85
+70 71
+80 65
+90 45
+100 32
+50 100
+55 88
+60 95
+62 62
+64 74
+
+62
+
+
+
+# the zip function is zip the two list, match the every elements which the one's first match the other's first,
+the second one match the other's second
+# PS:if the two list's number not equel, then remove the last ones
