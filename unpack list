@@ -1,0 +1,9 @@
+scores = [50, 60, 70, 80, 90, 100, 50, 55, 60, 62, 64, 68, 94, 82]
+sorted_scores = sorted(scores)
+print(sorted_scores)
+min_score, *mid_score, max_score = sorted_scores
+print(sum(mid_score)/len(mid_score))scores = [50, 60, 70, 80, 90, 100, 50, 55, 60, 62, 64, 68, 94, 82]
+sorted_scores = sorted(scores)
+print(sorted_scores)
+min_score, *mid_score, max_score = sorted_scores
+print(sum(mid_score)/len(mid_score))
