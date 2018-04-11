@@ -1,0 +1,216 @@
+1、连接数据库
+
+1）直接连接数据库和创建一个游标（cursor)
+
+?
+1
+2
+cnxn =pyodbc.connect('DRIVER={SQL Server};SERVER=localhost;DATABASE=testdb;UID=me;PWD=pass')
+cursor =cnxn.cursor()
+2）使用DSN连接。通常DSN连接并不需要密码，还是需要提供一个PSW的关键字。
+
+?
+1
+2
+cnxn =pyodbc.connect('DSN=test;PWD=password')
+cursor =cnxn.cursor()
+关于连接函数还有更多的选项，可以在pyodbc文档中的 connect funtion 和 ConnectionStrings查看更多的细节
+
+2、数据查询（SQL语句为 select ...from..where）
+
+1）所有的SQL语句都用cursor.execute函数运行。如果语句返回行，比如一个查询语句返回的行，你可以通过游标的fetch函数来获取数据，这些函数有（fetchone,fetchall,fetchmany）.如果返回空行，fetchone函数将返回None,而fetchall和fetchmany将返回一个空列。
+
+?
+1
+2
+3
+4
+cursor.execute("select user_id, user_name from users")
+row =cursor.fetchone()
+if row:
+    printrow
+2）Row这个类，类似于一个元组，但是他们也可以通过字段名进行访问。
+
+?
+1
+2
+3
+4
+cursor.execute("select user_id, user_name from users")
+row =cursor.fetchone()
+print'name:', row[1]         # access by column index
+print'name:', row.user_name  # or access by name
+3）如果所有的行都被检索完，那么fetchone将返回None.
+
+?
+1
+2
+3
+4
+5
+while 1:
+    row= cursor.fetchone()
+    ifnot row:
+        break
+    print'id:', row.user_id
+4)使用fetchall函数时，将返回所有剩下的行，如果是空行，那么将返回一个空列。（如果有很多行，这样做的话将会占用很多内存。未读取的行将会被压缩存放在数据库引擎中，然后由数据库服务器分批发送。一次只读取你需要的行，将会大大节省内存空间）
+
+?
+1
+2
+3
+4
+cursor.execute("select user_id, user_name from users")
+rows =cursor.fetchall()
+for row in rows:
+    printrow.user_id, row.user_name
+5）如果你打算一次读完所有数据，那么你可以使用cursor本身。
+
+?
+1
+2
+3
+cursor.execute("select user_id, user_name from users"):
+for row in cursor:
+    printrow.user_id, row.user_name
+6）由于cursor.execute返回一个cursor，所以你可以把上面的语句简化成：
+
+?
+1
+2
+for row in cursor.execute("select user_id, user_name from users"):
+    printrow.user_id, row.user_name
+7）有很多SQL语句用单行来写并不是很方便，所以你也可以使用三引号的字符串来写：
+
+?
+1
+2
+3
+4
+5
+6
+cursor.execute("""
+               select user_id, user_name
+                 from users
+                where last_logon < '2001-01-01'
+                  and bill_overdue = 'y'
+               """)
+3、参数
+
+1）ODBC支持在SQL语句中使用一个问号来作为参数。你可以在SQL语句后面加上值，用来传递给SQL语句中的问号。
+
+?
+1
+2
+3
+4
+5
+6
+cursor.execute("""
+               select user_id, user_name
+                 from users
+                where last_logon < ?
+                  and bill_overdue = ?
+               """,'2001-01-01','y')
+这样做比直接把值写在SQL语句中更加安全，这是因为每个参数传递给数据库都是单独进行的。如果你使用不同的参数而运行同样的SQL语句，这样做也更加效率。
+
+3）python DB API明确说明多参数时可以使用一个序列来传递。pyodbc同样支持：
+
+?
+1
+2
+3
+4
+5
+6
+cursor.execute("""
+               select user_id, user_name
+                 from users
+                where last_logon < ?
+                  and bill_overdue = ?
+               """, ['2001-01-01','y'])
+?
+1
+2
+3
+cursor.execute("select count(*) as user_count from users where age > ?",21)
+row =cursor.fetchone()
+print'%d users' %row.user_count
+ 
+
+4、数据插入
+
+1）数据插入，把SQL插入语句传递给cursor的execute函数，可以伴随任何需要的参数。
+
+?
+1
+2
+cursor.execute("insert into products(id, name) values ('pyodbc', 'awesome library')")
+cnxn.commit()
+?
+1
+2
+cursor.execute("insert into products(id, name) values (?, ?)",'pyodbc', 'awesome library')
+cnxn.commit()
+注意调用cnxn.commit()函数：你必须调用commit函数，否者你对数据库的所有操作将会失效！当断开连接时，所有悬挂的修改将会被重置。这很容易导致出错，所以你必须记得调用commit函数。
+
+5、数据修改和删除
+
+1）数据修改和删除也是跟上面的操作一样，把SQL语句传递给execute函数。但是我们常常想知道数据修改和删除时，到底影响了多少条记录，这个时候你可以使用cursor.rowcount的返回值。
+
+?
+1
+2
+3
+cursor.execute("delete from products where id <> ?",'pyodbc')
+printcursor.rowcount, 'products deleted'
+cnxn.commit()
+2）由于execute函数总是返回cursor，所以有时候你也可以看到像这样的语句：（注意rowcount放在最后面）
+
+?
+1
+2
+deleted =cursor.execute("delete from products where id <> 'pyodbc'").rowcount
+cnxn.commit()
+同样要注意调用cnxn.commit()函数
+
+6、小窍门
+
+1）由于使用单引号的SQL语句是有效的，那么双引号也同样是有效的：
+
+?
+1
+deleted =cursor.execute("delete from products where id <> 'pyodbc'").rowcount
+2）假如你使用的是三引号，那么你也可以这样使用：
+
+?
+1
+2
+3
+4
+5
+deleted =cursor.execute("""
+                         delete
+                           from products
+                          where id <> 'pyodbc'
+                         """).rowcount
+3）有些数据库（比如SQL Server）在计数时并没有产生列名，这种情况下，你想访问数据就必须使用下标。当然你也可以使用“as”关键字来取个列名（下面SQL语句的“as name-count”）
+
+?
+1
+2
+row =cursor.execute("select count(*) as user_count from users").fetchone()
+print'%s users' %row.user_count
+4）假如你只是需要一个值，那么你可以在同一个行局中使用fetch函数来获取行和第一个列的所有数据。
+
+?
+1
+2
+count =cursor.execute("select count(*) from users").fetchone()[0]
+print'%s users' %count
+如果列为空，将会导致该语句不能运行。fetchone()函数返回None，而你将会获取一个错误:NoneType不支持下标。如果有一个默认值，你能常常使用ISNULL,或者在SQL数据库直接合并NULLs来覆盖掉默认值。
+
+?
+1
+maxid =cursor.execute("select coalesce(max(id), 0) from users").fetchone()[0]
+在这个例子里面，如果max(id)返回NULL，coalesce(max(id),0)将导致查询的值为0。
