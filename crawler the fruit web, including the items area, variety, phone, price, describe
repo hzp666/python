@@ -1,0 +1,181 @@
+import pyodbc
+import re
+import requests
+from bs4 import BeautifulSoup
+import jieba
+import jieba.posseg as psg
+
+
+def save_fruit_data(item, page):
+    try:
+        if isinstance(page, int):
+            for i in range(1, page+1):
+                resp = requests.get('http://www.guo68.com/sell/search.php?kw=' + item + '&page=' + str(i))
+                source_code = resp.text
+                soup = BeautifulSoup(source_code, 'html.parser')
+                tag_info = soup.select('li.f_gray')
+
+                # item area
+                area_list = []
+
+                # item varieties
+                variety_list = []
+
+                # item telephone
+                phone_list = []
+
+                # item price
+                price_list = []
+
+                # item description
+                descr_list = []
+
+                # get the item's area, varieties, telephone number, price
+
+                # the method to find the area's word
+                def judge_area(pair):
+                    for a, b in pair:
+                        # print('a:', a, 'b', b)
+                        if b == 'ns':
+                            return a
+                        else:
+                            continue
+
+                    return 'not found'
+
+                # the method to find the variety's word
+                def judge_variety(pair):
+                    each_variety_list = []
+                    for a, b in pair:
+                        # print('a:', a, 'b', b)
+                        if a == '嘎拉':
+                            each_variety_list.append(a)
+                        elif a == '红富士':
+                            each_variety_list.append(a)
+                        elif a == '红将军':
+                            each_variety_list.append(a)
+                        elif a == '中秋王':
+                            each_variety_list.append(a)
+                        elif a == '新红星':
+                            each_variety_list.append(a)
+                        elif a == '黄元帅':
+                            each_variety_list.append(a)
+                        elif a == '乔纳金':
+                            each_variety_list.append(a)
+                        elif a == '辽伏':
+                            each_variety_list.append(a)
+                        elif a == '藤木':
+                            each_variety_list.append(a)
+                        elif a == '嘎啦':
+                            each_variety_list.append(a)
+                        elif a == '美八':
+                            each_variety_list.append(a)
+                        elif a == '红露':
+                            each_variety_list.append(a)
+                        elif a == '黄金帅':
+                            each_variety_list.append(a)
+                        elif a == '冷库':
+                            each_variety_list.append(a)
+                    variety_list.append(each_variety_list)
+                    return variety_list
+
+                # the method to find the variety's word
+                def judge_phone(pair):
+                    for a, b in pair:
+                        # print('a:', a, 'b', b)
+                        if b == 'm':
+                            if len(a) == 11:
+                                phone_list.append(a)
+                                return
+                            elif len(a) >= 6:
+                                phone_list.append(a)
+                                return
+                        else:
+                            continue
+                    phone_list.append('not found')
+
+                # the method to find the price
+                def judge_price():
+                    # to get each item's tag
+                    all_item_tag = soup.find_all(class_='list')
+                    each_item_price_list = []
+                    # to get each item's price tag
+                    for each_item_tag in all_item_tag:
+                        # add all item's price tag into 'each_item_price_list ', then i can save all tag including no price info's tag
+                        each_item_price_list.append(each_item_tag.find_all(class_='f_red'))
+
+                    # delete the tag and remain the tag's price info
+                    for each_item_price_info in each_item_price_list:
+                        dr = re.compile(r'<[^>]+>', re.S)
+                        dd = dr.sub('', str(each_item_price_info))
+                        price_list.append(dd)
+
+                # the method to input data to sql server
+                def input_data(comb_list):
+                    # get the pip
+                    cnxn = pyodbc.connect('DRIVER={SQL Server};SERVER=localhost;DATABASE=test1;UID=sa;PWD=hzp')
+                    cursor = cnxn.cursor()
+                    for (a, b, c, d, e) in comb_list:
+
+                        # transform the variety list to string
+                        variety_string = ''
+                        for i in range(0, len(b)):
+                            variety_string += b[i] + '; '
+
+                        # insert sql
+                        cursor.execute("insert into test1.dbo.fruit(area, variety, phone, price, description) values ( ?, ?, ?, ?, ?)",
+                                       a,
+                                       variety_string, c, d, e)
+                        cnxn.commit()
+                    cursor.close()
+                    cnxn.close()
+
+                # the 'tag' is each item's info
+                for tag in tag_info:
+
+                    # get the area
+
+                    # for each items to instantiation a string
+                    info_str = ''
+
+                    # the 'temp' is each item's string info
+                    temp = tag.strings
+
+                    # add each item's info to 'info_str'
+                    for temp1 in temp:
+                        info_str += temp1
+                    descr_list.append(info_str)
+                    # load the dictionary
+                    jieba.load_userdict('book.txt')
+                    #  split each item's info
+                    temp2 = psg.lcut(info_str)
+                    # print(temp2)
+
+                    # to find the area's word
+                    each_item_area = judge_area(temp2)
+                    area_list.append(each_item_area)
+
+                    # to find the variety's word
+                    each_item_variety = judge_variety(temp2)
+
+                    # to find the phone number's word
+                    judge_phone(temp2)
+                # to find the price's word
+                judge_price()
+
+                # zip the four info list, then we can combine the item's info
+                comb_list = zip(area_list, variety_list, phone_list, price_list, descr_list)
+                # use the method to save info into database
+                input_data(comb_list)
+
+        else:
+            return 'input page number which is int number'
+
+    except Exception as err:
+        print('magic code is down', err)
+
+
+save_fruit_data('香蕉', 2)
+
+
+
