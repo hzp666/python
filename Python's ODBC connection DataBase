@@ -7,6 +7,8 @@
 2
 cnxn =pyodbc.connect('DRIVER={SQL Server};SERVER=localhost;DATABASE=testdb;UID=me;PWD=pass')
 cursor =cnxn.cursor()
+cursor.close()
+cnxn.close()
 2）使用DSN连接。通常DSN连接并不需要密码，还是需要提供一个PSW的关键字。
 
 ?
@@ -40,6 +42,8 @@ cursor.execute("select user_id, user_name from users")
 row =cursor.fetchone()
 print'name:', row[1]         # access by column index
 print'name:', row.user_name  # or access by name
+cursor.close()
+cnxn.close()
 3）如果所有的行都被检索完，那么fetchone将返回None.
 
 ?
@@ -64,6 +68,8 @@ cursor.execute("select user_id, user_name from users")
 rows =cursor.fetchall()
 for row in rows:
     printrow.user_id, row.user_name
+cursor.close()
+cnxn.close()    
 5）如果你打算一次读完所有数据，那么你可以使用cursor本身。
 
 ?
@@ -80,6 +86,8 @@ for row in cursor:
 2
 for row in cursor.execute("select user_id, user_name from users"):
     printrow.user_id, row.user_name
+cursor.close()
+cnxn.close()    
 7）有很多SQL语句用单行来写并不是很方便，所以你也可以使用三引号的字符串来写：
 
 ?
@@ -95,6 +103,8 @@ cursor.execute("""
                 where last_logon < '2001-01-01'
                   and bill_overdue = 'y'
                """)
+cursor.close()
+cnxn.close()               
 3、参数
 
 1）ODBC支持在SQL语句中使用一个问号来作为参数。你可以在SQL语句后面加上值，用来传递给SQL语句中的问号。
@@ -112,6 +122,8 @@ cursor.execute("""
                 where last_logon < ?
                   and bill_overdue = ?
                """,'2001-01-01','y')
+cursor.close()
+cnxn.close()               
 这样做比直接把值写在SQL语句中更加安全，这是因为每个参数传递给数据库都是单独进行的。如果你使用不同的参数而运行同样的SQL语句，这样做也更加效率。
 
 3）python DB API明确说明多参数时可以使用一个序列来传递。pyodbc同样支持：
@@ -136,7 +148,8 @@ cursor.execute("""
 cursor.execute("select count(*) as user_count from users where age > ?",21)
 row =cursor.fetchone()
 print'%d users' %row.user_count
- 
+ cursor.close()
+cnxn.close()
 
 4、数据插入
 
@@ -152,6 +165,8 @@ cnxn.commit()
 2
 cursor.execute("insert into products(id, name) values (?, ?)",'pyodbc', 'awesome library')
 cnxn.commit()
+cursor.close()
+cnxn.close()
 注意调用cnxn.commit()函数：你必须调用commit函数，否者你对数据库的所有操作将会失效！当断开连接时，所有悬挂的修改将会被重置。这很容易导致出错，所以你必须记得调用commit函数。
 
 5、数据修改和删除
@@ -165,6 +180,8 @@ cnxn.commit()
 cursor.execute("delete from products where id <> ?",'pyodbc')
 printcursor.rowcount, 'products deleted'
 cnxn.commit()
+cursor.close()
+cnxn.close()
 2）由于execute函数总是返回cursor，所以有时候你也可以看到像这样的语句：（注意rowcount放在最后面）
 
 ?
@@ -172,6 +189,8 @@ cnxn.commit()
 2
 deleted =cursor.execute("delete from products where id <> 'pyodbc'").rowcount
 cnxn.commit()
+cursor.close()
+cnxn.close()
 同样要注意调用cnxn.commit()函数
 
 6、小窍门
@@ -201,6 +220,8 @@ deleted =cursor.execute("""
 2
 row =cursor.execute("select count(*) as user_count from users").fetchone()
 print'%s users' %row.user_count
+cursor.close()
+cnxn.close()
 4）假如你只是需要一个值，那么你可以在同一个行局中使用fetch函数来获取行和第一个列的所有数据。
 
 ?
@@ -208,6 +229,8 @@ print'%s users' %row.user_count
 2
 count =cursor.execute("select count(*) from users").fetchone()[0]
 print'%s users' %count
+cursor.close()
+cnxn.close()
 如果列为空，将会导致该语句不能运行。fetchone()函数返回None，而你将会获取一个错误:NoneType不支持下标。如果有一个默认值，你能常常使用ISNULL,或者在SQL数据库直接合并NULLs来覆盖掉默认值。
 
 ?
