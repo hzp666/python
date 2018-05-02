@@ -1,0 +1,73 @@
+#--*-- coding:utf-8 --*--
+#抓取淘宝商品信息
+# leif ```  站点 www.aotur.com
+import requests
+import re
+import jieba
+from collections import Counter
+
+
+def getHTMLText(url):
+    try:
+        r = requests.get(url, timeout=300)
+        print(r.status_code)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        return r.text
+    except:
+        return ""
+
+
+def parsePage(ilt, html):
+    try:
+        plt = re.findall(r'\"view_price\"\:\"[\d\.]*\"', html)
+        tlt = re.findall(r'\"raw_title\"\:\".*?\"', html)
+        for i in range(len(plt)):
+            price = eval(plt[i].split(':')[1])
+            title = eval(tlt[i].split(':')[1])
+            ilt.append([price, title])
+    except:
+        print("")
+
+
+def printGoodsList(ilt):
+    tplt = "{:4}\t{:8}\t{:16}"
+    print(tplt.format("序号", "价格", "商品名称"))
+    count = 0
+    for g in ilt:
+        count = count + 1
+        print(tplt.format(count, g[0], g[1]))
+
+
+def split_words(info_list):
+    title_str = ''
+    for i in info_list:
+        if i[1] != ' ':
+            title_str += i[1]
+        else:
+            continue
+    words_list = jieba.lcut(title_str)
+
+    c = Counter(words_list).most_common(50)
+    print(c)
+
+
+def main():
+    goods = '茶具'
+    depth = 30
+    start_url = 'https://s.taobao.com/search?q=' + goods + '&sort=sale-desc'
+    infoList = []
+    title_str = ''
+    for i in range(depth):
+        try:
+            url = start_url + '&s=' + str(22 * i)
+            html = getHTMLText(url)
+            parsePage(infoList, html)
+        except:
+            continue
+    # printGoodsList(infoList)
+    split_words(infoList)
+
+
+main()
+
