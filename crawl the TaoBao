@@ -1,0 +1,97 @@
+import requests
+import re
+import jieba
+from collections import Counter
+
+
+def get_html(page, goods):
+    start_url = 'https://s.taobao.com/search?q='+goods+'&sort=sale-desc'
+
+    try:
+        for i in range(0, page):
+            url = start_url+'&s='+str(i*22)
+            # timeout for the time is not enough to get data
+            r = requests.get(url, timeout=1000)
+            # see the state
+            print(r.status_code)
+            # set the crawler stay there
+            r.raise_for_status()
+            # because there have chinese word
+            r.encoding = r.apparent_encoding
+    except:
+        print('Method:get_html; is error')
+    return r.text
+
+
+def find_item_info(html, variety =''):
+
+    # the list for save item info
+    price_list = []
+    location_list = []
+    sales_list = []
+    title_list = []
+    nick_list = []
+    total_info_list = []
+
+    # re to find all item info
+    # view_price
+    vp = re.findall(r'\"view_price"\:\"[\d\.]+\"', html)
+    # item_location
+    il = re.findall(r'\"item_loc\"\:\".*?\"', html)
+    # view_sales
+    vs = re.findall(r'\"view_sales\"\:\"\d+', html)
+    # title
+    tt = re.findall(r'\"raw_title\"\:\".*?\"', html)
+    # nick, shop
+    nc = re.findall(r'\"nick\"\:\".*?\"', html)
+
+    # to save the info into the list
+    for i in range(0, len(vs)):
+        price_list.append(vp[i].split(':')[1].replace('\"' , ''))
+        location_list.append(il[i].split(':')[1].replace('\"' , ''))
+        sales_list.append(vs[i].split(':')[1].replace('\"' , ''))
+        title_list.append(tt[i].split(':')[1].replace('\"' , ''))
+        nick_list.append(nc[i].split(':')[1].replace('\"' , ''))
+
+    # zip the item info together
+    total_info_list = zip(nick_list, location_list, price_list, sales_list, title_list)
+
+    # judge  return what
+    if variety == 'title':
+        return title_list
+    elif variety == 'price':
+        return price_list
+    elif variety == 'location':
+        return location_list
+    elif variety == 'nick':
+        return nick_list
+    elif variety == 'sales':
+        return sales_list
+    else:
+        return total_info_list
+
+
+def count_words(list):
+    title_str = ''
+    # to combine all item title like a string
+    for i in list:
+        title_str += i
+
+    # segmentation words
+    segment_lsit = jieba.lcut(title_str)
+
+    # count the words frequency
+    hot_words = Counter(segment_lsit).most_common(50)
+
+    return hot_words
+
+
+def main():
+    html = get_html(40, '茶具')
+    # to input the 'html' ,and the type which you want get; e.g.title, price, shop...
+    list = find_item_info(html, 'title')
+    temp = count_words(list)
+    print(temp)
+
+
+main()
