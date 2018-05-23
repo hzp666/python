@@ -1,0 +1,110 @@
+import requests
+from bs4 import BeautifulSoup
+import jieba
+from collections import Counter
+import time
+
+def get_html( url):
+    try:
+        headers = { "Accept":"text/html,application/xhtml+xml,application/xml;",
+            "Accept-Encoding":"gzip",
+            "Accept-Language":"zh-CN,zh;q=0.8",
+            "Referer":"http://www.example.com/",
+            "User-Agent":"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36"
+            }
+
+        r = requests.get(url, headers=headers, timeout=300)
+        print(r.status_code)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        return r.text
+    except:
+        return "error"
+
+'''
+ type: title, price, shop 
+ and  if you want get all info then make type = ''
+'''
+def find_info(html, type=''):
+    # to save the item tittle
+    title_list = []
+
+    # to save the item price
+    price_list = []
+
+    # to save the item's shop
+    shop_list = []
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # get the item's title
+    item_title_list = soup.select('p[class="productTitle"] a')
+    for i in item_title_list:
+        title_list.append(i.get('title'))
+
+    # get the item's price
+    item_price_list = soup.select('p[class="productPrice"] em')
+    for i in  item_price_list:
+        price_list.append(i.get('title'))
+
+    # get the item's shop
+    item_shop_list = soup.select('a[class="productShop-name"]')
+    for i in item_shop_list:
+        shop_list.append(i.string)
+
+    # judge return what
+        if type == 'title':
+            return title_list
+        elif type == 'price':
+            return price_list
+        elif type == 'shop':
+            return shop_list
+        else:
+            return zip(title_list, price_list, shop_list)
+
+
+def count_frequency(list, type = ''):
+    if type == '':
+        return 'only title or price, check the type parameter'
+    elif type == 'title':
+        title_str = ''
+
+        # combine the title list into string, for segmentation
+        for i in list:
+            title_str += i
+
+        # segment title
+        segment_list = jieba.lcut(title_str)
+
+        # count words frequency
+        hot_words_title = Counter(segment_list).most_common(50)
+        return hot_words_title
+
+    elif type == 'price':
+        hot_words_price = Counter(list).most_common(5)
+        return hot_words_price
+
+
+def main():
+    
+    # for save the item's information when we want have pageNum > 1
+    list = []
+
+    # input title, price or none to judge what return
+    type = 'title'
+    
+    # what page num you want get
+    page = 3    
+    
+    for i in range(0, page):
+        url = 'https://list.tmall.com/search_product.htm?spm=a220m.1000858.0.0.37146c50bXqCUA&s='+ str(i*60) +'&q=' + '茶具' + '&sort=d'
+        html = get_html(url)
+        list_temp = find_info(html, type)
+        list.append(list_temp)
+
+    # list[1] because list = [[None],['9.9', '19.9', ...'9.9']]
+    hot_words = count_frequency(list[1], type)
+    print(hot_words)
+
+
+main()
