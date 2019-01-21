@@ -1,0 +1,162 @@
+
+
+code1 = []
+name1 = []
+code2 = []
+name2 = []
+
+# the code1 matched the code2's index, code2's first element match the match_list[0]
+# code2's second element match the match_list[1] ... and so on
+match_list=[]
+
+# the code2's matched index,for print the code2's element
+code2_matched_lsit=[]
+
+# the code2's not matched index,for print the code2's no matched element
+code2_nomatched_lsit=[]
+
+# read the text into I/O, code1, name1, code2, name2
+def readtxt():
+
+    # read the code1
+    data = open('E:/临时/pythonTest/code1.txt', 'r')
+    for line in data.readlines():
+        code1.append(line[0:-1])
+
+    # read the name1
+    data1 = open('E:/临时/pythonTest/name1.txt', 'r', encoding='utf-8')
+    for line1 in data1.readlines():
+        name1.append(line1[0:-1])
+
+    # read the code2, hospital's code
+    data2 = open('E:/临时/pythonTest/code2.txt', 'r')
+    for line2 in data2.readlines():
+        code2.append(line2[0:-1])
+
+    # read the name2， hospital's name
+    data3 = open('E:/临时/pythonTest/name2.txt', 'r', encoding='utf-8')
+    for line3 in data3.readlines():
+        name2.append(line3[0:-1])
+
+    data3.close()
+    data2.close()
+    data1.close()
+    data.close()
+
+
+
+    return code1, name1, code2, name2
+
+
+# compare the code2's elements exist in code1 or not,through code2 match code1
+# if success then save the matched code2's index,(ps: code1's index is 0,1,2,3,4.....)
+def compare(code1, name1, code2, name2):
+
+    # record the success compare's index of code1
+    n = 0
+    for i in code2:
+        try:
+            print(code1.index(i))
+
+        except ValueError:
+            print('N', n)
+            n = n + 1
+            continue
+
+
+# compare the name2_not_matched's elements exist in name1 or not, through name2 match name1
+def compare2(code1, name1, code2, name2):
+
+    # read the name2_not_matched
+    data = open('E:/临时/pythonTest/name2_not_matched.txt', 'r', encoding='utf-8')
+    name2_not_matched_list = []
+    for line in data.readlines():
+        name2_not_matched_list.append(line[0:-1])
+
+    # record the success compare's index of code1
+    n = 0
+    for i in name2_not_matched_list:
+        try:
+            print(name1.index(i))
+
+        except ValueError:
+            print('N', n)
+            n = n + 1
+            continue
+
+
+# read the index of match code2's frtst element to code1's index (actually it's code1's index)
+# and then print the code1, name1, and code2, name2 's element
+def readSuccessIndex():
+
+    # I/O read the matched code2's index
+    data = open('E:/临时/pythonTest/LIST.TXT', 'r')
+    for line in data.readlines():
+        match_list.append(line[0:-1])
+
+    # print the code1's/name1's  matched elements, for type setting
+    # for i in match_list:
+    #     if i != 'N' and i != '':
+    #         print(name1[int(i)])
+    #     else:
+    #         pass
+
+    # for save the code2's element, through save the matched index in code2
+    for i in range(len(match_list)-1):
+        if match_list[int(i)] != 'N' and match_list[int(i)] != '':
+
+            # print the code2's matched elements
+            # print(name2[int(i)])
+            pass
+        elif match_list[int(i)] == 'N' and match_list[int(i)] != '':
+            print(name2[int(i)])
+
+        else:
+            pass
+
+
+# read the index of match name2_not_matched's frtst element to name1's index (actually it's code1's index)
+# and then print the code1, name1, and code2, name2 's element
+def readSuccessIdex2():
+
+    # I/O read the matched code2's index
+    data = open('E:/临时/pythonTest/LIST2.txt', 'r')
+    match_list2 = []
+    for line in data.readlines():
+        match_list2.append(line[0:-1])
+
+    # print the code1's/name1's  matched elements, for type setting
+    # for i in match_list2:
+    #     if i[0:1] != 'N' and i != '':
+    #         print(name1[int(i)])
+    #     else:
+    #         pass
+
+    # read the name2_not_matched
+    data = open('E:/临时/pythonTest/code2_not_matched.txt', 'r', encoding='utf-8')
+    name2_not_matched_list = []
+    for line in data.readlines():
+        name2_not_matched_list.append(line[0:-1])
+
+    # for save the code2's element, through save the matched index in code2
+    for i in range(len(match_list2) - 1):
+        if match_list2[int(i)][0:1] != 'N' and match_list2[int(i)] != '':
+
+            # print the code2's matched elements
+            # print(name2_not_matched_list[int(i)])
+            pass
+        elif match_list2[int(i)][0:1] == 'N' and match_list2[int(i)] != '':
+            print(name2_not_matched_list[int(i)])
+            # print(name2_not_matched_list[int(i)])
+
+        else:
+            pass
+
+
+# map1 country code, map2 hospital code
+code1, name1, code2, name2 = readtxt()
+# compare(code1, name1, code2, name2)
+# readSuccessIndex()
+# compare2(code1, name1, code2, name2)
+readSuccessIdex2()
+
