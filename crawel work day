@@ -1,0 +1,41 @@
+import pymysql
+import random
+import decimal
+import requests
+import re
+
+# create the connection
+db = pymysql.connect('localhost', 'root', '123456', 'tianma_bi')
+
+# create a cursor
+cursor = db.cursor()
+
+get_data_sql = '''
+select id from dim_date where id >= '20100310'
+'''
+cursor.execute(get_data_sql)
+
+# get the date's id for crawl
+data = cursor.fetchall()
+print(data[0][0])
+for i in data:
+    response = requests.get('http://api.goseek.cn/Tools/holiday?date='+str(i[0]))
+    str1 = response.text
+    print(str1)
+    holiday_flag =re.findall(r'\d', str1)
+    print(holiday_flag[5])
+    insert_sql = '''
+    update dim_date
+    set holiday_flag = %s
+    where id = %s
+    ''' % (holiday_flag[5], i[0])
+    cursor.execute(insert_sql)
+    db.commit()
+
+
+
+# close connection
+cursor.close()
+db.close()
+
+
