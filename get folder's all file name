@@ -1,0 +1,24 @@
+import os
+
+all_file_path_list = []
+
+# function to get dir's all file name
+def get_all(cwd):
+    # list home dir's file or dir name
+    get_dir = os.listdir(cwd)
+    # judge is dir or file not
+    for i in get_dir:
+        # get all file or dir path
+        sub_dir = os.path.join(cwd, i)
+        # judge path
+        if os.path.isdir(sub_dir):
+            # is dir then call function again
+            get_all(sub_dir)
+
+        else:
+            # save the every single file's path
+            all_file_path_list.append(i)
+
+
+get_all('D:/doc/bak/reportlets/20201111/reports/BI')
+print(all_file_path_list)
