@@ -1,0 +1,97 @@
+import re
+import os
+
+# statement a list for get dir's all file name
+all_file_path_list = []
+
+
+# function to get dir's all file name
+def get_all(cwd):
+    # list home dir's file or dir name
+    get_dir = os.listdir(cwd)
+    # judge is dir or file not
+    for i in get_dir:
+        # get all file or dir path
+        sub_dir = os.path.join(cwd, i)
+        # judge path
+        if os.path.isdir(sub_dir):
+            # is dir then call function again
+            get_all(sub_dir)
+
+        else:
+            # save the every single file's path
+            all_file_path_list.append(i)
+
+    return all_file_path_list
+
+
+# this func is to get all file's contain sql
+def getSql(fileName):
+    temp = open('D:/doc/temp/reports/祥源汇/'+fileName, 'r', encoding='utf-8', errors='ignore')
+    source_txt = temp.read()
+
+    # to save the pure sql
+    EHR_sql_list = []
+
+    # to save the pure data source name
+    data_source_name_list = []
+
+    #to get the EHR's sql
+    m0 = re.findall(r'<!\[CDATA\[EHR\]\]([\s\S]*?)<PageQuery>', source_txt)
+    for i in range(len(m0)):
+        EHR_sql_list.append(re.findall(r'<!\[CDATA\[([\s\S]*?)\]\]></Query>', m0[i]))
+
+    # to get the data source's name
+
+    # to get mass one first
+    temp_data_source_name = re.findall(r'<TableDa([\s\S]*?)<!\[CDATA\[EHR\]\]', source_txt)
+
+    # judge temp_data_source_name is null or not
+    if len(temp_data_source_name) != 0:
+        # to get pure data source name
+        for i in range(len(temp_data_source_name)):
+            temp_data_source_name2 = re.findall(r'ta name="([\s\S]*?)" class', temp_data_source_name[i])
+            data_source_name_list.append(temp_data_source_name2[len(temp_data_source_name2)-1])
+
+    # to zip the data source name and EHR's sql
+    zipped_data = list(zip(data_source_name_list, EHR_sql_list))
+
+    # to write the data source name and sql into txt
+    with open('D:/doc/temp/reports/祥源汇/allSql.txt', 'a', encoding='utf-8') as w_txt:
+        w_txt.writelines('============报表名称：' + fileName + '=================')
+        w_txt.writelines('\n')
+        for i in range(len(zipped_data)):
+            # to write the data source name
+            w_txt.writelines('数据来源' + str(i+1) + ':'+zipped_data[i][0])
+            w_txt.writelines('\n')
+
+            # to write the sql
+            w_txt.writelines(zipped_data[i][1])
+            w_txt.writelines('\n')
+            w_txt.writelines('----------------------------------------------------')
+            w_txt.writelines('\n')
+
+    temp.close()
+    w_txt.close()
+
+
+# to get all file name list
+dirList = get_all('D:/doc/temp/reports/祥源汇')
+
+# to use get sql function
+for str1 in dirList:
+    getSql(str1)
+    print(str1, 'OK')
+
+# fileName_list = ['被动优化', '地产事业群人力效能分析', '地产事业群人力效能分析-含满编率',
+#             '地产事业群人力效能分析-离职率圆环', '集团人员结构分析', '集团人员流动分析-离职',
+#             '劳产比', '离职分析', '人均回款', '人均签约额', '人均在建面积', '人均在建面积-工程人员',
+#             '人力成本', '入职', '入职分析',
+#              '首页', '在岗人数-集团中心', '在岗人数-项目公司']
+
+# fileName_list = [ '地产事业群人力效能分析']
+
+# to use get sql function
+# for str1 in fileName_list:
+#     getSql(str1)
+#     print(str1, 'OK')
