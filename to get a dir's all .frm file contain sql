@@ -36,15 +36,16 @@ def getSql(fileName):
     # to save the pure data source name
     data_source_name_list = []
 
-    #to get the EHR's sql
-    m0 = re.findall(r'<!\[CDATA\[EHR\]\]([\s\S]*?)<PageQuery>', source_txt)
+    #to get the 祥源汇's sql
+    # ps: the re's content contain data source's name  eg:祥源汇 or EHR 
+    m0 = re.findall(r'<!\[CDATA\[祥源汇\]\]([\s\S]*?)<PageQuery>', source_txt)
     for i in range(len(m0)):
         EHR_sql_list.append(re.findall(r'<!\[CDATA\[([\s\S]*?)\]\]></Query>', m0[i]))
 
     # to get the data source's name
 
     # to get mass one first
-    temp_data_source_name = re.findall(r'<TableDa([\s\S]*?)<!\[CDATA\[EHR\]\]', source_txt)
+    temp_data_source_name = re.findall(r'<TableDa([\s\S]*?)<!\[CDATA\[祥源汇\]\]', source_txt)
 
     # judge temp_data_source_name is null or not
     if len(temp_data_source_name) != 0:
@@ -78,7 +79,8 @@ def getSql(fileName):
 # to get all file name list
 dirList = get_all('D:/doc/temp/reports/祥源汇')
 
-# to use get sql function
+# to use get sql function;  ps:when use the func "getSql", you need to change one place in code ,  it's re's content,
+#                                                     for the re's content contain data source's name  eg:祥源汇 or EHR 
 for str1 in dirList:
     getSql(str1)
     print(str1, 'OK')
