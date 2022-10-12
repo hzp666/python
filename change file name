@@ -1,0 +1,32 @@
+import os
+if __name__ == '__main__':
+    print(1111)
+
+    # 先复制再改名
+    # pip install shutil #就是这个库
+    # pip install pytest-shutil 上一行出错尝试此行
+    import os
+    import shutil  # 复制文件的库
+
+    xlsbpath = r"C:\photo\temp\images"
+    os.chdir(xlsbpath)
+    filelist = os.listdir(xlsbpath)  # 该文件夹下所有的文件（包括文件夹）
+    print(filelist)  # 文件夹中所有文件名
+
+    n = 0
+
+    fir = 1
+    sec = 1
+
+    for i in filelist:
+
+        old = i  # 旧文件名
+
+        new = str(fir) + '-' + str(sec) + '-1029.png'  # 新文件名
+        os.rename(old, new)  # 重命名
+
+        sec += 1
+
+        if sec > 5:
+            sec = 1
+            fir += 1
