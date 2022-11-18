@@ -1,0 +1,66 @@
+from sklearn import tree
+from sklearn import preprocessing
+
+
+if __name__ == '__main__':
+
+    import pandas as pd
+    # for print width
+    pd.set_option('display.max_columns', 900990)
+    pd.set_option('display.width', 90999999999090)
+    pd.set_option('display.max_colwidth', 9099999909990)
+
+    # load data
+    data = pd.read_csv("C:/work/20221111全采AI/all_cleaned_data_noTitle.csv", encoding='gbk')
+
+    # split feature and target, using column name to split
+    feature = data[['account_number', 'borrow', 'loan', 'Account_balance', 'Opposite_account_name', 'Opposite_account',
+                    'Opposite_Opening_bank', 'abstract', 'purpose', 'title_of_account']]
+
+    target = data[['flag']]
+
+    # coding the feature and flag, cause word is not be supported by decision tree
+    enc = preprocessing.OneHotEncoder()
+    enc.fit(feature)
+    feature = enc.transform(feature).toarray()
+
+    enc.fit(target)
+    target = enc.transform(target).toarray()
+
+    # split train and test data
+    from sklearn.model_selection import train_test_split
+
+    # split train/test data
+    train_feature, test_feature, train_target, test_target = train_test_split(feature, target, test_size=0.3)
+
+    # check the data's shape
+    # print(train_feature.shape, test_feature.shape)
+
+    # create the tree
+    model = tree.DecisionTreeClassifier()
+
+    # train the tree
+    model = model.fit(train_feature, train_target)
+
+    # check the model's score, eg:Over fitting
+    # print(model.score(train_feature, train_target))
+
+    # see most important feature
+    # print(model.feature_importances_)
+    # for i in model.feature_importances_:
+    #     print(i)
+
+    # predict
+    test_predict = model.predict(test_feature)
+
+    # check precision recall ...
+    from sklearn.metrics import classification_report
+    # print(classification_report(test_target, test_predict))
+
+    # score
+    from sklearn import metrics
+    # train_score = metrics.accuracy_score(train_target, train_predict)
+    test_score = metrics.accuracy_score(test_target, test_predict)
+
+    print(test_score)
+
