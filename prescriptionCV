@@ -1,0 +1,360 @@
+
+import shutil
+import random
+import pandas as pd
+import os
+
+import numpy as np
+from tqdm import tqdm
+
+import torch
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+import matplotlib.pyplot as plt
+
+from PIL import Image
+
+# 忽略烦人的红色提示
+import warnings
+warnings.filterwarnings("ignore")
+
+from torchvision import transforms
+
+from torchvision import datasets
+
+from torch.utils.data import DataLoader
+
+from torchvision import models
+import torch.optim as optim
+
+if __name__ == '__main__':
+
+    # 检测图像文件是否损坏
+    def is_valid_image(path):
+        try:
+            bValid = True
+            fileobj = open(path, 'rb')  # 以二进制打开文件
+            buf = fileobj.read()
+            if not buf.startswith(b'\xff\xd8'):  # 是否以\xff\xd8开头 表示JPEG（jpg）
+                bValid = False
+            else:
+                try:
+                    Image.open(fileobj).verify()
+                except Exception as e:
+                    bValid = False
+        except Exception as e:
+            return False
+        return bValid
+
+    # 这里写一个调用函数：调用is_valid_image
+    def is_call_valid(path, move_to_path):
+
+        # 遍历图像夹下所有图像 root:根目录  dirs：根目录下所有目录（文件夹）：files: 包含所有图像的一个list
+        for root, dirs, files in os.walk(path):
+            for img_file in files:
+                # 组合图像的绝对路径
+                img_file_path = os.path.join(root, img_file)
+                # 调用图像判断函数
+                flag = is_valid_image(img_file_path)
+                # 判断图像是否损坏，若是则移动到失效文件路径中
+                if flag == False:
+                    # this delete can not restore
+                    # os.remove(img_file_path)
+
+                    # 移动文件
+                    shutil.move(img_file_path, move_to_path)
+                    # print(img_file_path)
+
+    # split train and test data
+    def split_data():
+        # 指定数据集路径
+        dataset_path = './处方'
+        dataset_name = '处方'
+        print('数据集', dataset_name)
+        classes = os.listdir(dataset_path)
+        print(classes)
+
+        # 创建 train 文件夹
+        os.mkdir(os.path.join(dataset_path, 'train'))
+
+        # 创建 test 文件夹
+        os.mkdir(os.path.join(dataset_path, 'val'))
+
+        # 在 train 和 test 文件夹中创建各类别子文件夹
+        for fruit in classes:
+            os.mkdir(os.path.join(dataset_path, 'train', fruit))
+            os.mkdir(os.path.join(dataset_path, 'val', fruit))
+
+        # 测试集比例
+        test_frac = 0.2
+
+        # 随机数种子，便于复现
+        random.seed(123)
+
+        df = pd.DataFrame()
+
+        print('{:^18} {:^18} {:^18}'.format('类别', '训练集数据个数', '测试集数据个数'))
+
+        # 遍历每个类别
+        for fruit in classes:
+
+            # 读取该类别的所有图像文件名
+            old_dir = os.path.join(dataset_path, fruit)
+            images_filename = os.listdir(old_dir)
+            random.shuffle(images_filename)  # 随机打乱
+
+            # 划分训练集和测试集
+            testset_numer = int(len(images_filename) * test_frac)  # 测试集图像个数
+            testset_images = images_filename[:testset_numer]  # 获取拟移动至 test 目录的测试集图像文件名
+            trainset_images = images_filename[testset_numer:]  # 获取拟移动至 train 目录的训练集图像文件名
+
+            # 移动图像至 test 目录
+            for image in testset_images:
+                old_img_path = os.path.join(dataset_path, fruit, image)  # 获取原始文件路径
+                new_test_path = os.path.join(dataset_path, 'val', fruit, image)  # 获取 test 目录的新文件路径
+                shutil.move(old_img_path, new_test_path)  # 移动文件
+
+            # 移动图像至 train 目录
+            for image in trainset_images:
+                old_img_path = os.path.join(dataset_path, fruit, image)  # 获取原始文件路径
+                new_train_path = os.path.join(dataset_path, 'train', fruit, image)  # 获取 train 目录的新文件路径
+                shutil.move(old_img_path, new_train_path)  # 移动文件
+
+            # 删除旧文件夹
+            assert len(os.listdir(old_dir)) == 0  # 确保旧文件夹中的所有图像都被移动走
+            shutil.rmtree(old_dir)  # 删除文件夹
+
+            # 工整地输出每一类别的数据个数
+            print('{:^18} {:^18} {:^18}'.format(fruit, len(trainset_images), len(testset_images)))
+
+            # 保存到表格中
+            df = df.append({'class': fruit, 'trainset': len(trainset_images), 'testset': len(testset_images)},
+                           ignore_index=True)
+
+        # 重命名数据集文件夹
+        shutil.move(dataset_path, dataset_name + '_split')
+
+        # 数据集各类别数量统计表格，导出为 csv 文件
+        df['total'] = df['trainset'] + df['testset']
+        df.to_csv('./处方_数据统计/数据量统计.csv', index=False)
+
+    def train_cv():
+
+        from PIL import Image, ImageFile
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+        # 有 GPU 就用 GPU，没有就用 CPU
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        print('device', device)
+
+        # 训练集图像预处理：缩放裁剪、图像增强、转 Tensor、归一化
+        train_transform = transforms.Compose([transforms.RandomResizedCrop(224),
+                                              transforms.RandomHorizontalFlip(),
+                                              transforms.ToTensor(),
+                                              transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                                              ])
+
+        # 测试集图像预处理-RCTN：缩放、裁剪、转 Tensor、归一化
+        test_transform = transforms.Compose([transforms.Resize(256),
+                                             transforms.CenterCrop(224),
+                                             transforms.ToTensor(),
+                                             transforms.Normalize(
+                                                 mean=[0.485, 0.456, 0.406],
+                                                 std=[0.229, 0.224, 0.225])
+                                             ])
+
+        # 数据集文件夹路径
+        dataset_dir = './处方_split'
+
+        train_path = os.path.join(dataset_dir, 'train')
+        test_path = os.path.join(dataset_dir, 'val')
+        print('训练集路径', train_path)
+        print('测试集路径', test_path)
+
+        # 载入训练集
+        train_dataset = datasets.ImageFolder(train_path, train_transform)
+
+        # 载入测试集
+        test_dataset = datasets.ImageFolder(test_path, test_transform)
+
+        print('训练集图像数量', len(train_dataset))
+        print('类别个数', len(train_dataset.classes))
+        print('各类别名称', train_dataset.classes)
+
+        print('测试集图像数量', len(test_dataset))
+        print('类别个数', len(test_dataset.classes))
+        print('各类别名称', test_dataset.classes)
+
+        # 各类别名称
+        class_names = train_dataset.classes
+        n_class = len(class_names)
+
+        # 映射关系：类别 到 索引号
+        print(train_dataset.class_to_idx)
+
+        # 映射关系：索引号 到 类别
+        idx_to_labels = {y: x for x, y in train_dataset.class_to_idx.items()}
+
+        # 保存为本地的 npy 文件
+        np.save('./处方_数据统计/idx_to_labels.npy', idx_to_labels)
+        np.save('./处方_数据统计/labels_to_idx.npy', train_dataset.class_to_idx)
+
+        BATCH_SIZE = 32
+
+        # 训练集的数据加载器
+        train_loader = DataLoader(train_dataset,
+                                  batch_size=BATCH_SIZE,
+                                  shuffle=True,
+                                  num_workers=4
+                                  )
+
+        # DataLoader 是 python生成器，每次调用返回一个 batch 的数据
+        images, labels = next(iter(train_loader))
+
+        # method1 : base on pytorch model, and change  a little
+        ## start
+        model = models.resnet18(pretrained=True)  # 载入预训练模型
+
+        model.fc = nn.Linear(model.fc.in_features, n_class)
+
+        optimizer = optim.Adam(model.parameters())
+        ## end
+
+        # method2 :change all pytorch model, and train again
+        ## start
+        # model = models.resnet18(pretrained=False) # 只载入模型结构，不载入预训练权重参数
+
+        # model.fc = nn.Linear(model.fc.in_features, n_class)
+
+        # optimizer = optim.Adam(model.parameters())
+        ## end
+
+        model = model.to(device)
+
+        # 交叉熵损失函数
+        criterion = nn.CrossEntropyLoss()
+
+        # 训练轮次 Epoch
+        EPOCHS = 20
+
+        # 遍历每个 EPOCH
+        for epoch in tqdm(range(EPOCHS)):
+
+            model.train()
+
+            for images, labels in train_loader:  # 获取训练集的一个 batch，包含数据和标注
+                images = images.to(device)
+                labels = labels.to(device)
+
+                outputs = model(images)  # 前向预测，获得当前 batch 的预测结果
+                loss = criterion(outputs, labels)  # 比较预测结果和标注，计算当前 batch 的交叉熵损失函数
+
+                optimizer.zero_grad()
+                loss.backward()  # 损失函数对神经网络权重反向传播求梯度
+                optimizer.step()  # 优化更新神经网络权重
+
+
+
+        # 测试集的数据加载器
+        test_loader = DataLoader(test_dataset,
+                                 batch_size=BATCH_SIZE,
+                                 shuffle=False,
+                                 num_workers=4
+                                 )
+        # test model
+        model.eval()
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for images, labels in tqdm(test_loader):  # 获取测试集的一个 batch，包含数据和标注
+                images = images.to(device)
+                labels = labels.to(device)
+                outputs = model(images)  # 前向预测，获得当前 batch 的预测置信度
+                _, preds = torch.max(outputs, 1)  # 获得最大置信度对应的类别，作为预测结果
+                total += labels.size(0)
+                correct += (preds == labels).sum()  # 预测正确样本个数
+
+            print('测试集上的准确率为 {:.3f} %'.format(100 * correct / total))
+
+        # save the model
+        torch.save(model, './model_save/prescription_pytorch_C1.pth')
+
+    def test_cv(img_path):
+        # 有 GPU 就用 GPU，没有就用 CPU
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        from PIL import Image, ImageFont, ImageDraw
+        # 导入中文字体，指定字号
+        font = ImageFont.truetype('simsunb.ttf', 32)
+        # 载入类别
+        idx_to_labels = np.load('./处方_数据统计/idx_to_labels.npy', allow_pickle=True).item()
+
+        # import model
+        model = torch.load('./model_save/prescription_pytorch_C1.pth')
+        model = model.eval().to(device)
+
+        from torchvision import transforms
+        # 测试集图像预处理-RCTN：缩放、裁剪、转 Tensor、归一化
+        test_transform = transforms.Compose([transforms.Resize(256),
+                                             transforms.CenterCrop(224),
+                                             transforms.ToTensor(),
+                                             transforms.Normalize(
+                                                 mean=[0.485, 0.456, 0.406],
+                                                 std=[0.229, 0.224, 0.225])
+                                             ])
+
+        from PIL import Image
+
+        img_pil = Image.open(img_path).convert("RGB")
+
+        input_img = test_transform(img_pil)  # 预处理
+
+        input_img = input_img.unsqueeze(0).to(device)
+
+        # 执行前向预测，得到所有类别的 logit 预测分数
+        pred_logits = model(input_img)
+
+        pred_softmax = F.softmax(pred_logits, dim=1)  # 对 logit 分数做 softmax 运算
+
+        plt.figure(figsize=(22, 10))
+
+        x = idx_to_labels.values()
+        y = pred_softmax.cpu().detach().numpy()[0] * 100
+        width = 0.45  # 柱状图宽度
+
+        ax = plt.bar(x, y, width)
+
+        plt.bar_label(ax, fmt='%.2f', fontsize=15)  # 置信度数值
+        plt.tick_params(labelsize=20)  # 设置坐标文字大小
+
+        plt.title(img_path, fontsize=30)
+        plt.xticks(rotation=45)  # 横轴文字旋转
+        plt.xlabel('类别', fontsize=20)
+        plt.ylabel('置信度', fontsize=20)
+        plt.show()
+
+        # 置信度最大的前 n 个结果
+        n = 2
+        top_n = torch.topk(pred_softmax, n)  # 取置信度最大的 n 个结果
+        pred_ids = top_n[1].cpu().detach().numpy().squeeze()  # 解析出类别
+        confs = top_n[0].cpu().detach().numpy().squeeze()  # 解析出置信度
+
+        draw = ImageDraw.Draw(img_pil)
+
+        for i in range(n):
+            class_name = idx_to_labels[pred_ids[i]]  # 获取类别名称
+            confidence = confs[i] * 100  # 获取置信度
+            text = '{:<15} {:>.4f}'.format(class_name, confidence)  # 保留 4 位小数
+            print(text)
+
+            # 文字坐标，中文字符串，字体，rgba颜色
+            draw.text((50, 100 + 50 * i), text, font=font, fill=(255, 0, 0, 1))
+
+
+    # is_call_valid("C:/photo/temp/train-false", "C:/photo/temp/invalid_photo")
+    # split_data()
+    # train_cv()
+
+    test_cv("C:/photo/temp/test-pre/19.jpg")
+
