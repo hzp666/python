@@ -1,0 +1,23 @@
+import psycopg2
+from sqlalchemy import create_engine
+import pandas as pd
+from io import StringIO
+
+if __name__ == '__main__':
+    
+    # set special column's datatype to str,cause defualt maybe int
+    data1 = pd.read_excel("C:/work/20230224完成.xlsx",dtype={1:"str", 3:"str", 5:"str", 7:"str", 9:"str"})
+
+    # dataframe类型转换为IO缓冲区中的str类型
+    output = StringIO()
+    data1.to_csv(output, sep='\t', index=False, header=False)
+    output1 = output.getvalue()
+
+    conn = psycopg2.connect(host="10.0.0.0", user = "postgres", password = "123456", database ="postgres" )
+
+    cur = conn.cursor()
+    cur.copy_from(StringIO(output1), "your_table_name")
+    conn.commit()
+    cur.close()
+    conn.close()
+    print('done')
