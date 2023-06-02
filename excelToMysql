@@ -1,0 +1,18 @@
+from sqlalchemy import create_engine
+import sqlalchemy
+import pandas as pd
+from io import StringIO
+
+if __name__ == '__main__':
+    # set special column's datatype,cause default maybe int
+    data1 = pd.read_excel("C:/work/20230224完成.xlsx",dtype={1:"str", 3:"str", 5:"str", 7:"str", 9:"str"})
+
+    # # dataframe类型转换为IO缓冲区中的str类型
+    # output = StringIO()
+    # data1.to_csv(output, sep='\t', index=False, header=False)
+    # output1 = output.getvalue()
+    mysql_engine = create_engine(f"mysql+pymysql://yourUserName:yourPassWord@10.0.0.0:3306/yourDBname")
+
+
+    data1.to_sql(name='yourTableName', con=mysql_engine, if_exists="append", index=False)
+    print('done')
